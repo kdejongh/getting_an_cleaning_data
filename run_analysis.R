@@ -23,6 +23,7 @@
 
 library(stringr)
 library(reshape2)
+library(plyr)
 
 #setwd("~/Projects/scoyo/coursera/getdata-003/project")
 
@@ -71,10 +72,9 @@ selectedFeatures <- subset(as.character(features$name), !is.na(str_match(feature
 selectedDataSet <- mergedDataSet[c("subject", "activity", selectedFeatures)]
 
 ## 3. Uses descriptive activity names to name the activities in the data set
-selectedDataSet$activity = lapply(selectedDataSet$activity, function(id) { activityLabels[id, "name"] })
+selectedDataSet <- mutate(selectedDataSet, activity=activityLabels[activity, "name"])
 
 ## 4. Appropriately labels the data set with descriptive activity names. 
-# already DONE by setting the column names (?)
 # replace "-" with "_", remove 'special' chars like "(", ")" and fix typo 'BodyBody'
 colnames(selectedDataSet) <- str_replace_all(str_replace_all(str_replace_all(colnames(selectedDataSet), "\\-", "_"), "\\(\\)", ""), "BodyBody", "Body")
     
