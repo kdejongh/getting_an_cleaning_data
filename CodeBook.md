@@ -61,19 +61,20 @@ The feature names follow a naming convention, so the requested fearures can be r
 
 A regular expression is used to find the requested features and a subset of the merged data set containing the requested features is created:
 
-    selectedFeatures <- subset(as.character(features$name), !is.na(str_match(features$name, "-(mean|std)\\(\\)(-[XYZ])?$")[,1]))
+    selectedFeatures <- subset(as.character(features$name), 
+                               !is.na(str_match(features$name, "-(mean|std)\\(\\)(-[XYZ])?$")[,1]))
     selectedDataSet <- mergedDataSet[c("subject", "activity", selectedFeatures)]
 
-The column names of that subset are pretty print versions of the original feature names, i.e.:
+The column names of that subset are prettier versions of the original feature names, i.e.:
 
-* '()' are removed
+* "()" is" removed
 * '-' is replaced by '_'
-
-    colnames(selectedDataSet) <- str_replace_all(str_replace_all(colnames(selectedDataSet), "\\-", "_"), "\\(\\)", "")
+* "BodyBody"" is replaced by "Body"
 
 Finally the activity values are replaced by their label name, retrieved from the loaded activity labels, the id is used as row index in order to retrieve the corresponding label name:
 
-    selectedDataSet["activity"] = lapply(selectedDataSet["activity"], function(id) { activityLabels[id, "name"] })
+    selectedDataSet["activity"] = lapply(selectedDataSet["activity"], 
+                                         function(id) { activityLabels[id, "name"] })
 
 ### Reshape data
 The data set containing the measurements for mean and standard deviation is melted and casted to retrieve the everage value. 

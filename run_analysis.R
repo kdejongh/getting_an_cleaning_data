@@ -71,12 +71,12 @@ selectedFeatures <- subset(as.character(features$name), !is.na(str_match(feature
 selectedDataSet <- mergedDataSet[c("subject", "activity", selectedFeatures)]
 
 ## 3. Uses descriptive activity names to name the activities in the data set
-selectedDataSet["activity"] = lapply(selectedDataSet["activity"], function(id) { activityLabels[id, "name"] })
+selectedDataSet$activity = lapply(selectedDataSet$activity, function(id) { activityLabels[id, "name"] })
 
 ## 4. Appropriately labels the data set with descriptive activity names. 
 # already DONE by setting the column names (?)
-# replace "-" with "_" and remove 'special' chars like "(", ")"
-colnames(selectedDataSet) <- str_replace_all(str_replace_all(colnames(selectedDataSet), "\\-", "_"), "\\(\\)", "")
+# replace "-" with "_", remove 'special' chars like "(", ")" and fix typo 'BodyBody'
+colnames(selectedDataSet) <- str_replace_all(str_replace_all(str_replace_all(colnames(selectedDataSet), "\\-", "_"), "\\(\\)", ""), "BodyBody", "Body")
     
 ## 5. Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
 meltedDataSet <- melt(selectedDataSet, c("subject", "activity"))
