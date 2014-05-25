@@ -75,8 +75,8 @@ selectedDataSet <- mergedDataSet[c("subject", "activity", selectedFeatures)]
 selectedDataSet <- mutate(selectedDataSet, activity=activityLabels[activity, "name"])
 
 ## 4. Appropriately labels the data set with descriptive activity names. 
-# replace "-" with "_", remove 'special' chars like "(", ")" and fix typo 'BodyBody'
-colnames(selectedDataSet) <- str_replace_all(str_replace_all(str_replace_all(colnames(selectedDataSet), "\\-", "_"), "\\(\\)", ""), "BodyBody", "Body")
+# remove 'special' chars like "(", ")", "-" and fix typo 'BodyBody'
+colnames(selectedDataSet) <- tolower(gsub("BodyBody", "Body", gsub("\\-", ".", gsub("\\(\\)", "", colnames(selectedDataSet)))))
     
 ## 5. Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
 meltedDataSet <- melt(selectedDataSet, c("subject", "activity"))

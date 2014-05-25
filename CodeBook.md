@@ -1,95 +1,106 @@
 # Code Book
-## Goal
-The R script called run_analysis.R does the following: 
+## Content
+The data set is stored in a file called 'tidy.dataset.txt' and contains a table with the average values for <b>mean</b> and <b>standard deviations<b> for a set of experiments.
 
-1. Merges the training and the test sets to create one data set.
-2. Extracts only the measurements on the mean and standard deviation for each measurement. 
-3. Uses descriptive activity names to name the activities in the data set
-4. Appropriately labels the data set with descriptive activity names. 
-5. Creates a second, independent tidy data set with the average of each variable for each activity and each subject. 
+The experiments have been carried out with a group of 30 volunteers within an age bracket of 19-48 years. Each person performed six activities (<i>WALKING</i>, <i>WALKING_UPSTAIRS</i>, <i>WALKING_DOWNSTAIRS</i>, <i>SITTING</i>, <i>STANDING</i>, <i>LAYING</i>) wearing a smartphone (Samsung Galaxy S II) on the waist. Using its embedded accelerometer and gyroscope, the 3.axial linear acceleration and 3.axial angular velocity at a constant rate of 50Hz were captured. The acceleration signal was then separated into body and gravity acceleration signals ('tbodyacc.xyz' and 'tgravityacc.xyz').
 
-## Data
-The original data set is found in the subdirectory named 'UCI HAR Dataset' or can be downloaded from 
-[here](https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip). 
-A complete description of the data set can be found 
-[here](http://archive.ics.uci.edu/ml/datasets/Human+Activity+Recognition+Using+Smartphones) or in the files:
+Subsequently, the body linear acceleration and angular velocity were derived in time to obtain Jerk signals ('tbodyaccjerk.xyz' and tbodygyrojerk.xyz). Also the magnitude of these three-dimensional signals were calculated using the Euclidean norm (tbodyaccmag, tgravityaccmag, tbodyaccjerkmag, tbodygyromag, tbodygyrojerkmag). 
 
-* 'UCI HAR Dataset/README.txt'
-* 'UCI HAR Dataset/features_info.txt'
-* 'UCI HAR Dataset/features.txt'
-* 'UCI HAR Dataset/activity_labels.txt'
+Finally a Fast Fourier Transform (FFT) was applied to some of these signals producing fbodyacc.xyz, fbodyaccjerk.xyz, fbodygyro.xyz, fbodyaccferkmag, fbodygyromag, fbodygyrojerkmag. (Note the 'f' to indicate frequency domain signals). 
 
-## Workflow
-### Load and merge data
-First the script loads the common data, i.e.
+'.xyz' is used to denote 3-axial signals in the X, Y and Z directions.
 
-* 'activityLabels': the list of activity labels ('UCI HAR Dataset/activity_labels.txt')
-* 'features': the names of the measured variables ('UCI HAR Dataset/features.txt'). 
+## Variables
+The data set contains rows for each subject and activity. The row values are the mean and standard deviations for the measurements described above. The variable names follow the following syntax:
 
-There are 6 activities (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING) and 561 variables.
+    (t|f)(body|gravity)(acc|gyro)(jerk|mag|jerkmag)*.(std|mean)(.x|.y|.z)*
 
-Second the test and training data files are loaded and merged. Each set consists of 3 files that are found in the subdirectories 'test' and 'train':
+where 
 
-* 'subject_test.txt'|'subject_train.txt': the ids (range 1-30) of the subjects (30 volunteers within an age bracket of 19-48 years)
-* 'x_test.txt'|'x_train.txt': the data, i.e. the 561 measurements for each subject and activity
-* 'y_test.txt'|'y_train.txt': the ids for the activities that were measured (range 1-6)
+* values separated by '|' are or-values
+* expressions tagged with '*' makes them optional
+* 't': used to denote time
+* 'f': used to indicate frequency domain signals
+* 'body': body acceleration
+* 'gravity': gravity acceleration
+* 'acc': values measured by a accelerometer
+* 'gyro': values measured by a gyroscope
+* 'jerk': Jerk signals
+* 'mag': the magnitude calculated using the Euclidean norm
+* 'jerkmag': the magnitude of the Jerk signla calculated using the Euclidean norm
+* 'std' is a standard deviation
+* 'mean' is the mean value
+* '.x', ".y', '.z' is used to denote 3-axial signals in the X, Y and Z directions.
 
-Each file has 2947 observations.
+Note that the variable names contain dots (.) although this not recommended in the lectures. But I think one kind of a separator is needed to get readable names and dots are allowed by the Google coding guide lines, so...
 
-The merge is done by appending the rows of the subjects, measurements and activities for test and training data and creating a new data frame with the results, e.g.:
+This results in the following list of variables:
 
-    mergedDataSet <- data.frame(subject=rbind(subjectsTest, subjectsTraining), 
-                                activity=rbind(yTest, yTraining), 
-                                rbind(xTest, xTraining))
-    
-The column names of the data frame are set to the feature names loaded from 'UCI HAR Dataset/features.txt'.
-
-    colnames(mergedDataSet) <- c("subject", "activity", as.character(features$name))
-
-### Extract and clean relevant data
-Once the data is loaded and merged, the values for the mean and standard deviation measurements need to be extracted. 
-The feature names follow a naming convention, so the requested fearures can be recognized by the following name syntax:
-
-* [feature]-mean() or
-* [feature]-mean()-X or
-* [feature]-mean()-Y or
-* [feature]-mean()-Z or
-* [feature]-std() or
-* [feature]-std()-X or
-* [feature]-std()-Y or
-* [feature]-std()-Z
-
-A regular expression is used to find the requested features and a subset of the merged data set containing the requested features is created:
-
-    selectedFeatures <- subset(as.character(features$name), 
-                               !is.na(str_match(features$name, "-(mean|std)\\(\\)(-[XYZ])?$")[,1]))
-    selectedDataSet <- mergedDataSet[c("subject", "activity", selectedFeatures)]
-
-The activity values are replaced by their label name (retrieved from the loaded activity labels, the activity id is used as row index in order to retrieve the corresponding label name):
-
-    selectedDataSet <- mutate(selectedDataSet, activity=activityLabels[activity, "name"])
-
-Finally the column names of the selected subset are replaced with prettier versions of the original feature names, i.e.:
-
-* '()' is removed
-* '-' is replaced by '_'
-* 'BodyBody' is replaced by 'Body'
-
-A simple string replacement usign regular expressions:
-
-    colnames(selectedDataSet) <- str_replace_all(str_replace_all(str_replace_all(colnames(selectedDataSet), 
-                                                                                 "\\-", "_"),
-                                                                "\\(\\)", ""),
-                                                "BodyBody", "Body")
-    
-### Reshape data
-The data set containing the measurements for mean and standard deviation is melted and casted to retrieve the everage value. 
-The ids are the subject and activity, all the other measurements are the variables. The melted data set is then casted for subject and activity using 'mean' as aggregation function:
-
-    dcast(meltedDataSet, subject+activity~variable, mean)
-
-### Save data
-Finally the tidy data set is written as a table to a file called 'tidy-dataset.txt'. To load it back in R, simply use:
-
-    read.table("tidy-dataset.txt")
-
+* "subject": the id of the volunteer (integer with range 1-30)
+* "activity": the activity that was carried out (WALKING, WALKING_UPSTAIRS, WALKING_DOWNSTAIRS, SITTING, STANDING, LAYING) 
+* "tbodyacc.mean.x" 
+* "tbodyacc.mean.y" 
+* "tbodyacc.mean.z" 
+* "tbodyacc.std.x" 
+* "tbodyacc.std.y" 
+* "tbodyacc.std.z" 
+* "tgravityacc.mean.x" 
+* "tgravityacc.mean.y" 
+* "tgravityacc.mean.z" 
+* "tgravityacc.std.x" 
+* "tgravityacc.std.y" 
+* "tgravityacc.std.z" 
+* "tbodyaccjerk.mean.x" 
+* "tbodyaccjerk.mean.y" 
+* "tbodyaccjerk.mean.z" 
+* "tbodyaccjerk.std.x" 
+* "tbodyaccjerk.std.y" 
+* "tbodyaccjerk.std.z" 
+* "tbodygyro.mean.x" 
+* "tbodygyro.mean.y" 
+* "tbodygyro.mean.z" 
+* "tbodygyro.std.x" 
+* "tbodygyro.std.y" 
+* "tbodygyro.std.z" 
+* "tbodygyrojerk.mean.x" 
+* "tbodygyrojerk.mean.y" 
+* "tbodygyrojerk.mean.z" 
+* "tbodygyrojerk.std.x" 
+* "tbodygyrojerk.std.y" 
+* "tbodygyrojerk.std.z" 
+* "tbodyaccmag.mean" 
+* "tbodyaccmag.std" 
+* "tgravityaccmag.mean" 
+* "tgravityaccmag.std" 
+* "tbodyaccjerkmag.mean" 
+* "tbodyaccjerkmag.std" 
+* "tbodygyromag.mean" 
+* "tbodygyromag.std" 
+* "tbodygyrojerkmag.mean" 
+* "tbodygyrojerkmag.std" 
+* "fbodyacc.mean.x" 
+* "fbodyacc.mean.y" 
+* "fbodyacc.mean.z" 
+* "fbodyacc.std.x" 
+* "fbodyacc.std.y" 
+* "fbodyacc.std.z" 
+* "fbodyaccjerk.mean.x" 
+* "fbodyaccjerk.mean.y" 
+* "fbodyaccjerk.mean.z" 
+* "fbodyaccjerk.std.x" 
+* "fbodyaccjerk.std.y" 
+* "fbodyaccjerk.std.z" 
+* "fbodygyro.mean.x" 
+* "fbodygyro.mean.y" 
+* "fbodygyro.mean.z" 
+* "fbodygyro.std.x" 
+* "fbodygyro.std.y" 
+* "fbodygyro.std.z" 
+* "fbodyaccmag.mean" 
+* "fbodyaccmag.std" 
+* "fbodyaccjerkmag.mean" 
+* "fbodyaccjerkmag.std" 
+* "fbodygyromag.mean" 
+* "fbodygyromag.std" 
+* "fbodygyrojerkmag.mean" 
+* "fbodygyrojerkmag.std"
